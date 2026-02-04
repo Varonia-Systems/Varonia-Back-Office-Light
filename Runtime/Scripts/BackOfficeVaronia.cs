@@ -11,31 +11,21 @@ namespace VaroniaBackOffice
     /// </summary>
     public class BackOfficeVaronia : MonoBehaviour
     {
-        /// <summary> Static instance for global access (Singleton). </summary>
         public static BackOfficeVaronia Instance { get; private set; }
-        
-        /// <summary> Event triggered once the GlobalConfig.json has been successfully loaded. </summary>
         public static event Action OnConfigLoaded;
 
         [Header("Events")]
-        /// <summary> Triggered when the game starts with the tutorial sequence enabled. </summary>
         public UnityEvent OnStartWithTuto;
-        
-        /// <summary> Triggered when the game starts and the tutorial is bypassed. </summary>
         public UnityEvent OnStartSkipTuto;
 
         [Header("Status")]
         [SerializeField] private bool _isStarted = false;
-        
-        /// <summary> Indicates whether a start event has already been triggered. </summary>
         public bool IsStarted => _isStarted;
 
         [Header("Settings")]
-        /// <summary> Holds the deserialized configuration data (IPs, IDs, Player settings). </summary>
         public GlobalConfig config;
         
         [HideInInspector]
-        /// <summary> Reference to the MQTT client component attached to this GameObject. </summary>
         public MQTTVaronia mqttClient;
 
         private void Awake()
@@ -45,9 +35,6 @@ namespace VaroniaBackOffice
             LoadConfig();
         }
 
-        /// <summary>
-        /// Ensures only one instance of the BackOffice exists and persists across scenes.
-        /// </summary>
         private void InitializeSingleton()
         {
             if (Instance != null && Instance != this)
@@ -60,8 +47,7 @@ namespace VaroniaBackOffice
         }
 
         /// <summary>
-        /// Reads GlobalConfig.json from the persistent data path (Varonia root folder) 
-        /// and populates the config object.
+        /// Loads the config from JSON. If the file doesn't exist, it creates a new one with default values.
         /// </summary>
         public void LoadConfig()
         {
@@ -76,35 +62,58 @@ namespace VaroniaBackOffice
                 {
                     string jsonContent = File.ReadAllText(filePath);
                     config = GlobalConfig.CreateFromJson(jsonContent);
-                    OnConfigLoaded?.Invoke();
+                    Debug.Log($"[BackOfficeVaronia] Config loaded from {filePath}");
                 }
                 catch (Exception e)
                 {
                     Debug.LogError($"[BackOfficeVaronia] JSON Parse Error: {e.Message}");
                 }
             }
+            else
+            {
+                // --- AUTO-GENERATION LOGIC ---
+                Debug.LogWarning("[BackOfficeVaronia] Config file missing. Creating default GlobalConfig.json");
+                
+                // 1. Create a new instance (it will use the default values defined in the class)
+                config = new GlobalConfig(); 
+                
+                // 2. Save it to disk immediately
+                SaveConfig();
+                
+                Debug.Log($"[BackOfficeVaronia] Config loaded from {filePath}");
+            }
+
+            OnConfigLoaded?.Invoke();
         }
 
         /// <summary>
-        /// Logic to trigger the game start. Prevents multiple triggers via the _isStarted flag.
+        /// Serializes the current config object and saves it to the persistent path.
         /// </summary>
-        /// <param name="skipTuto">If true, invokes OnStartSkipTuto; otherwise invokes OnStartWithTuto.</param>
+        public void SaveConfig()
+        {
+            try
+            {
+                string rootPath = Application.persistentDataPath.Replace(Application.companyName + "/" + Application.productName, "Varonia");
+                string filePath = Path.Combine(rootPath, "GlobalConfig.json");
+                
+                string json = config.ToJson(); // Using the Newtonsoft method we discussed
+                File.WriteAllText(filePath, json);
+                
+                Debug.Log($"[BackOfficeVaronia] Config saved successfully to {filePath}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[BackOfficeVaronia] Failed to save config: {e.Message}");
+            }
+        }
+
         public void TriggerStartGame(bool skipTuto)
         {
             if (_isStarted) return;
-
             _isStarted = true;
             
-            if (skipTuto)
-            {
-                Debug.Log("[BackOfficeVaronia] Event: Start Skip Tuto triggered.");
-                OnStartSkipTuto?.Invoke();
-            }
-            else
-            {
-                Debug.Log("[BackOfficeVaronia] Event: Start With Tuto triggered.");
-                OnStartWithTuto?.Invoke();
-            }
+            if (skipTuto) OnStartSkipTuto?.Invoke();
+            else OnStartWithTuto?.Invoke();
         }
     }
 }

@@ -12,26 +12,26 @@ namespace VaroniaBackOffice
     {
         [Header("Network")]
         /// <summary> The IP address of the main game server. </summary>
-        public string ServerIP; 
+        public string ServerIP = "localhost"; 
         
         /// <summary> The IP address of the MQTT broker. </summary>
-        public string MQTT_ServerIP; 
+        public string MQTT_ServerIP = "localhost"; 
         
         /// <summary> Unique client identifier for the MQTT connection. </summary>
-        public int MQTT_IDClient; 
+        public int MQTT_IDClient = 0; 
 
         [Header("Preferences")]
         /// <summary> Role of the device (e.g., Server_Player, Client_Spectator). </summary>
-        public DeviceMode DeviceMode; 
+        public DeviceMode DeviceMode = DeviceMode.Server_Player; 
         
         /// <summary> Selected UI and localized content language. </summary>
-        public string Language; 
+        public string Language = "Fr"; 
         
         /// <summary> Player's dominant hand for input/VR. </summary>
-        public MainHand MainHand;  
+        public MainHand MainHand = MainHand.Right;  
         
         /// <summary> Local display name for the player. </summary>
-        public string PlayerName; 
+        public string PlayerName = "Varonia Player"; 
 
         /// <summary>
         /// Deserializes a JSON string into a GlobalConfig object using Newtonsoft.Json.
@@ -49,6 +49,12 @@ namespace VaroniaBackOffice
                 UnityEngine.Debug.LogError($"[GlobalConfig] Deserialization Error: {e.Message}");
                 return null; 
             }
+        }
+        
+        
+        public string ToJson()
+        {
+            return JsonConvert.SerializeObject(this, Formatting.Indented);
         }
     }
 }

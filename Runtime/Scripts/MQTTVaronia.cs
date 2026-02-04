@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using M2MqttUnity;
 using Newtonsoft.Json;
@@ -42,6 +43,10 @@ namespace VaroniaBackOffice
             base.OnConnected();
             Debug.Log("[Back Office Varonia] Successfully connected to the broker");
 
+            SoftState = ESoftState.GAME_LAUNCHED;
+            StartCoroutine(UpConnection());
+            
+            
             Subscribe();
             
         }
@@ -117,6 +122,21 @@ namespace VaroniaBackOffice
             Debug.Log($"[MQTT] Published SoftState: {eSoft}");
             SoftState = eSoft;
         }
+        
+        
+        
+        // Ping Serveur
+        IEnumerator UpConnection()
+        {
+            while (true)
+            {
+                yield return new WaitForSeconds(1);
+                SetSoftState(SoftState);
+            }
+        }
+
+        
+        
         
         
         
